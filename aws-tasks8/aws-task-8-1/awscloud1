@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Build Vpc
+Resources:
+  DellVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+       - Key: Name
+         Value: Dell-Vpc
+
+  DellInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: Dell-IGW
+
+  AttachGateway:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref DellVPC
+      InternetGatewayId: !Ref InternetGateway
+ 
+  DellPubSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DellVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: "ap-south-1a"
+      Tags:
+      - Key: Name
+        Value: Dell-Pub-Sub
+
+  DellPvtSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DellVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: "ap-south-1b"
+      Tags:
+      - Key: Name
+        Value: Dell-Pvt-Sub
+
+  DellPubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: DellVPC
+      Tags:
+      - Key: Name
+        Value: Dell-Pub-Rt
+
+  DellPvtRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: DellVPC
+      Tags:
+      - Key: Name
+        Value: Dell-Pvt-Rt
+
+  DellPubSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: DellPubSubnet
+      RouteTableId:
+        Ref: DellPubRouteTable
+
+  DellPvtSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: DellPvtSubnet
+      RouteTableId:
+        Ref: DellPvtRouteTable
+
+  DellRoute:
+    Type: AWS::EC2::Route
+    DependsOn: DellAttachGateway
+    Properties:
+      RouteTableId:
+        Ref: DellPubRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+    GatewayId:
+      Ref: DellInternetGateway
