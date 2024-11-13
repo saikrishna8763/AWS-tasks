@@ -21,7 +21,7 @@ Resources:
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcIa: !Ref MyVPC
+      VpcId: !Ref MyVPC
       InternetGatewayId: !Ref MyInternetGateway
 
   PublicSubnet:
@@ -92,53 +92,57 @@ Resources:
       SubnetId: !Ref PrivateSubnet
       RouteTableId: !Ref PrivateRouteTable
 
-  PublicSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  SSHSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: Allow HTTP and SSH from anywhere
+      GroupDescription: "Enable SSH access"
       VpcId: !Ref MyVPC
       SecurityGroupIngress:
-        - IpProtocol: tcp
+        - IpProtocol: "tcp"
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: "SSHSecurityGroup"
+ 
+  HTTPSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Enable HTTP access"
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
-
-  PrivateSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: "HTTPSecurityGroup"
+ 
+  PublicInstance:
+    Type: "AWS::EC2::Instance"
     Properties:
-      GroupDescription: Allow SSH only from Public EC2 instance
-      VpcId: !Ref MyVPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          SourceSecurityGroupId: !Ref PublicSecurityGroup
-
-  PublicEC2Instance:
-    Type: AWS::EC2::Instance
+      InstanceType: "t2.micro"
+      SubnetId: !Ref PublicSubnet
+      ImageId: "ami-063d43db0594b521b"  
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref HTTPSecurityGroup
+      KeyName: "krishna" 
+      Tags:
+        - Key: Name
+          Value: "PublicInstance"
+ 
+  PrivateInstance:
+    Type: "AWS::EC2::Instance"
     Properties:
-      InstanceType: t2.micro
-      KeyName: rajakey
-      ImageId: ami-063d43db0594b521b
-      NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          DeviceIndex: 0
-          SubnetId: !Ref PublicSubnet
-          GroupSet:
-            - !Ref PublicSecurityGroup
-
-  PrivateEC2Instance:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      KeyName: rajakey
-      ImageId: ami-063d43db0594b521b
-      NetworkInterfaces:
-        - DeviceIndex: 0
-          SubnetId: !Ref PrivateSubnet
-          GroupSet:
-            - !Ref PrivateSecurityGroup
+      InstanceType: "t2.micro"
+      SubnetId: !Ref PrivateSubnet
+      ImageId: "ami-063d43db0594b521b"
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+      KeyName: "krishna" 
+      Tags:
+        - Key: Name
+          Value: "PrivateInstance"
